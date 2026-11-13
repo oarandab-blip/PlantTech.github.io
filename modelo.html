@@ -1,0 +1,557 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Plant Tech | Modelos matemáticos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='estilos.css') }}" />
+    <style>
+      .model-page { max-width: 1100px; margin: 28px auto; padding: 0 20px; display: grid; gap: 22px; }
+      .model-intro h1 { margin: 6px 0 8px; font-size: clamp(26px, 4vw, 34px); color: #14301f; }
+      .model-intro p { margin: 0; color: #4a5d51; line-height: 1.5; }
+      .model-card { padding: 26px; border: 1px solid #dfe8df; border-radius: 18px; background: #fff; }
+      .model-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+      .model-tag { display: inline-block; margin-bottom: 8px; padding: 3px 10px; border-radius: 99px; background: #e3f3e8; color: #14532d; font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+      .model-card h2 { margin: 0 0 12px; color: #14301f; font-size: 22px; }
+      .model-card label { display: block; margin: 0 0 6px; font-size: 14px; font-weight: 700; color: #14301f; }
+      .model-card select, .model-card input { width: 100%; padding: 11px; border: 1px solid #cfdccf; border-radius: 10px; font: inherit; background: #fff; }
+      .model-card input:focus, .model-card select:focus { outline: 3px solid #8bc79f; outline-offset: 1px; }
+      .hint { margin: 6px 0 0; font-size: 13px; color: #4a5d51; }
+      .equation { margin: 0 0 18px; padding: 14px 16px; background: #edf7ee; border-radius: 12px; overflow-wrap: anywhere; font-family: Georgia, serif; line-height: 1.7; }
+      .campos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px 16px; margin-bottom: 18px; }
+      .campos .ancho { grid-column: 1 / -1; }
+      .campos small { display: block; margin-top: 4px; font-size: 12px; color: #4a5d51; }
+      .result { margin-top: 20px; }
+      .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+      .kpi { padding: 12px 14px; border: 1px solid #dfe8df; border-radius: 12px; background: #f8fbf8; }
+      .kpi b { display: block; font-size: 20px; color: #14301f; }
+      .kpi span { display: block; margin-top: 2px; font-size: 12px; color: #4a5d51; }
+      .kpi.ok { background: #e3f3e8; border-color: #b9dcc4; }
+      .kpi.alerta { background: #fdf0cf; border-color: #ecd28a; }
+      .result .nota { margin: 10px 0 0; font-size: 13px; color: #4a5d51; }
+      .chart { display: block; width: 100%; height: 260px; margin-top: 16px; }
+      .explica { margin-top: 18px; border: 1px solid #e2ebe2; border-radius: 12px; background: #f8fbf8; font-size: 14px; }
+      .explica > summary { padding: 12px 14px; cursor: pointer; font-weight: 700; color: #2f4a38; }
+      .explica > div { padding: 0 14px 14px; }
+      .legend { margin: 0 0 12px; padding-left: 20px; line-height: 1.7; }
+      .interpretation { margin: 0; padding: 12px 14px; border-left: 4px solid #237849; border-radius: 6px; background: #eef6ef; line-height: 1.55; }
+      .model-note h2 { margin: 0 0 6px; font-size: 16px; color: #14301f; }
+      .model-note p { margin: 0; font-size: 14px; line-height: 1.55; color: #405448; }
+      .interp { margin-top: 14px; display: grid; gap: 10px; }
+      .interp-calculada { margin: 0; padding: 12px 14px; border-left: 4px solid #237849; border-radius: 6px; background: #eef6ef; line-height: 1.55; font-size: 14px; }
+      .interp-ia { padding: 12px 14px; border: 1px solid #dfe8df; border-radius: 12px; background: #fff; font-size: 14px; line-height: 1.55; }
+      .interp-ia p { margin: 6px 0 0; }
+      .interp-ia small { display: block; margin-top: 8px; font-size: 12px; color: #4a5d51; }
+      .etq-ia { display: inline-block; padding: 2px 10px; border-radius: 99px; background: #e8eefc; color: #1e3a8a; font-size: 12px; font-weight: 700; }
+      .interp-estado { color: #4a5d51; }
+      summary:focus-visible { outline: 3px solid #8bc79f; outline-offset: 2px; }
+      @media (max-width: 860px) { .model-grid { grid-template-columns: 1fr; } }
+      @media (max-width: 480px) { .campos { grid-template-columns: 1fr; } }
+    </style>
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="header-inner">
+        <a class="app-brand" href="/">
+          <span class="app-brand-icon">🪴</span>
+          <span><strong>Plant Tech</strong><small>Modelos matemáticos</small></span>
+        </a>
+        <a class="logout-button" href="/" style="text-decoration: none">← Volver a mis plantas</a>
+      </div>
+    </header>
+
+    <main class="model-page">
+      <section class="model-intro">
+        <span class="eyebrow">ECUACIONES DIFERENCIALES</span>
+        <h1>Simulador de crecimiento y humedad</h1>
+        <p>
+          Estima cuánto crecerá una planta y en cuántos días la tierra
+          necesitará riego, usando modelos diferenciales.
+        </p>
+      </section>
+
+      <section id="plantaPicker" class="model-card" hidden>
+        <label for="plantaSelect">Asociar los cálculos a una planta (opcional)</label>
+        <select id="plantaSelect">
+          <option value="">No guardar los cálculos</option>
+        </select>
+        <p class="hint">Si eliges una planta, cada cálculo queda guardado en su historial.</p>
+      </section>
+      <p id="sinSesion" class="hint" hidden>
+        Inicia sesión en Plant Tech para poder guardar tus cálculos en una planta.
+      </p>
+
+      <div class="model-grid">
+        <section class="model-card">
+          <span class="model-tag">Modelo logístico</span>
+          <h2>Crecimiento de la planta</h2>
+          <p class="equation">
+            dH/dt = rH(1 − H/K)<br />
+            H(t) = K / (1 + ((K − H<sub>0</sub>)/H<sub>0</sub>)·e<sup>−rt</sup>)
+          </p>
+
+          <form id="growthForm">
+            <div class="campos">
+              <div>
+                <label for="growthH0">Altura inicial (cm)</label>
+                <input id="growthH0" type="number" min="0.1" step="any" value="5" required />
+              </div>
+              <div>
+                <label for="growthR">Tasa de crecimiento (por día)</label>
+                <input id="growthR" type="number" min="0" step="any" value="0.08" required />
+              </div>
+              <div>
+                <label for="growthK">Altura máxima (cm)</label>
+                <input id="growthK" type="number" min="0.2" step="any" value="50" required />
+              </div>
+              <div>
+                <label for="growthTarget">Altura objetivo (cm)</label>
+                <input id="growthTarget" type="number" min="0" step="any" value="40" />
+                <small>Opcional: calcula en cuántos días se alcanza.</small>
+              </div>
+              <div class="ancho">
+                <label for="growthDays">Tiempo a estimar (días)</label>
+                <input id="growthDays" type="number" min="0.1" step="any" value="30" required />
+              </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Calcular crecimiento</button>
+          </form>
+
+          <div id="growthResult" class="result" aria-live="polite"></div>
+          <canvas id="growthChart" class="chart" role="img" aria-label="Gráfica de la altura de la planta en el tiempo"></canvas>
+
+          <details class="explica">
+            <summary>¿Cómo funciona este modelo?</summary>
+            <div>
+              <ul class="legend">
+                <li><strong>H</strong>: altura de la planta (cm) en el tiempo t.</li>
+                <li><strong>H<sub>0</sub></strong>: altura inicial.</li>
+                <li><strong>r</strong>: rapidez de crecimiento (por día).</li>
+                <li><strong>K</strong>: altura máxima que alcanza la especie.</li>
+                <li><strong>t</strong>: tiempo en días.</li>
+              </ul>
+              <p class="interpretation">
+                La planta crece despacio al inicio, más rápido en la etapa media
+                y se estabiliza al acercarse a su altura máxima, porque los
+                recursos (espacio, luz, nutrientes) son limitados. Esto produce
+                la curva en forma de S.
+              </p>
+            </div>
+          </details>
+        </section>
+
+        <section class="model-card">
+          <span class="model-tag">Decaimiento exponencial</span>
+          <h2>Humedad de la tierra</h2>
+          <p class="equation">
+            dM/dt = −kM<br />
+            M(t) = M<sub>0</sub>·e<sup>−kt</sup>
+          </p>
+
+          <form id="humidityForm">
+            <div class="campos">
+              <div>
+                <label for="humidityH0">Humedad inicial (%)</label>
+                <input id="humidityH0" type="number" min="0.1" max="100" step="any" value="80" required />
+              </div>
+              <div>
+                <label for="humidityK">Pérdida de agua (por día)</label>
+                <input id="humidityK" type="number" min="0" step="any" value="0.08" required />
+              </div>
+              <div>
+                <label for="humidityCritical">Nivel crítico (%)</label>
+                <input id="humidityCritical" type="number" min="0.1" max="100" step="any" value="35" required />
+                <small>Por debajo de este valor la planta necesita riego.</small>
+              </div>
+              <div>
+                <label for="humidityDays">Tiempo a estimar (días)</label>
+                <input id="humidityDays" type="number" min="0.1" step="any" value="7" required />
+              </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Calcular humedad</button>
+          </form>
+
+          <div id="humidityResult" class="result" aria-live="polite"></div>
+          <canvas id="humidityChart" class="chart" role="img" aria-label="Gráfica de la humedad de la tierra en el tiempo"></canvas>
+
+          <details class="explica">
+            <summary>¿Cómo funciona este modelo?</summary>
+            <div>
+              <ul class="legend">
+                <li><strong>M</strong>: humedad de la tierra (%) en el tiempo t.</li>
+                <li><strong>M<sub>0</sub></strong>: humedad inicial.</li>
+                <li><strong>k</strong>: rapidez con que la tierra pierde agua (por día).</li>
+                <li><strong>t</strong>: tiempo en días.</li>
+              </ul>
+              <p class="interpretation">
+                La tierra pierde humedad más rápido cuando está muy húmeda y más
+                lento cuando ya está seca, por eso la curva baja cada vez más
+                suavemente. Cuando llega al nivel crítico, la planta necesita
+                riego.
+              </p>
+            </div>
+          </details>
+        </section>
+      </div>
+
+      <section class="model-card model-note">
+        <h2>Limitaciones de los modelos</h2>
+        <p>
+          Son modelos teóricos simplificados. En la realidad, la pérdida de
+          humedad depende también de la temperatura, la luz y el tipo de suelo,
+          y el crecimiento varía según la especie y las condiciones de cultivo.
+        </p>
+      </section>
+    </main>
+
+    <script>
+      "use strict";
+
+      const nf = (n, d = 1) => Number.isFinite(Number(n))
+        ? Number(n).toLocaleString("es-CO", { maximumFractionDigits: d })
+        : "—";
+
+      async function enviarModelo(url, datos) {
+        const respuesta = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(datos),
+        });
+        const texto = await respuesta.text();
+        let resultado;
+        try {
+          resultado = JSON.parse(texto);
+        } catch {
+          throw new Error(
+            "El servidor devolvió una respuesta que no es JSON. " +
+            "Código HTTP: " + respuesta.status + ". Respuesta: " + texto.slice(0, 250)
+          );
+        }
+        if (!respuesta.ok) {
+          throw new Error(resultado.error || "No se pudo calcular el modelo.");
+        }
+        return resultado;
+      }
+
+      function plantaElegida() {
+        const valor = document.getElementById("plantaSelect").value;
+        return valor === "" ? null : Number(valor);
+      }
+
+      function crearTile(valor, etiqueta, clase) {
+        const caja = document.createElement("div");
+        caja.className = "kpi" + (clase ? " " + clase : "");
+        const grande = document.createElement("b");
+        grande.textContent = valor;
+        const chica = document.createElement("span");
+        chica.textContent = etiqueta;
+        caja.append(grande, chica);
+        return caja;
+      }
+
+      function crearNota(texto) {
+        const p = document.createElement("p");
+        p.className = "nota";
+        p.textContent = texto;
+        return p;
+      }
+
+      const lecturaCrecimiento = (r) => {
+        const c = r.datos_clave || {};
+        let texto;
+        if (c.dia_maximo_crecimiento !== null && c.dia_maximo_crecimiento !== undefined) {
+          texto = "Con tus valores, la planta crece más rápido hacia el día " + nf(c.dia_maximo_crecimiento) +
+            ", cuando mide " + nf(c.altura_maximo_crecimiento) + " cm, a unos " + nf(c.velocidad_maxima, 2) +
+            " cm por día. Después se frena al acercarse a " + nf(r.altura_maxima) + " cm.";
+        } else {
+          texto = "Con tus valores, la planta ya superó la mitad de su altura máxima, así que crece cada vez más despacio hacia " +
+            nf(r.altura_maxima) + " cm (como máximo " + nf(c.velocidad_maxima, 2) + " cm por día).";
+        }
+        return texto;
+      };
+
+      const lecturaHumedad = (r) => {
+        const c = r.datos_clave || {};
+        const partes = [];
+        partes.push(c.vida_media === null || c.vida_media === undefined
+          ? "Con pérdida 0, la humedad de la tierra no cambia."
+          : "La tierra pierde la mitad de su humedad cada " + nf(c.vida_media) + " días.");
+        if (r.tiempo_hasta_critica === null || r.tiempo_hasta_critica === undefined) {
+          partes.push("Con estos valores no llega al nivel crítico de " + nf(r.humedad_critica) + " %.");
+        } else if (r.tiempo_hasta_critica === 0) {
+          partes.push("Ya está en el nivel crítico o por debajo: conviene regar.");
+        } else {
+          partes.push("Llega al nivel crítico de " + nf(r.humedad_critica) + " % en " + nf(r.tiempo_hasta_critica) +
+            " días; conviene regar antes de ese día.");
+        }
+        return partes.join(" ");
+      };
+
+      function datosParaIA(modelo, r) {
+        const c = r.datos_clave || {};
+        if (modelo === "crecimiento") {
+          return {
+            altura_inicial: r.altura_inicial, tasa_crecimiento: r.tasa_crecimiento,
+            altura_maxima: r.altura_maxima, dias: r.dias, altura_estimada: r.altura_estimada,
+            altura_objetivo: r.altura_objetivo, tiempo_hasta_objetivo: r.tiempo_hasta_objetivo,
+            dia_maximo_crecimiento: c.dia_maximo_crecimiento, velocidad_maxima: c.velocidad_maxima,
+          };
+        }
+        return {
+          humedad_inicial: r.humedad_inicial, coeficiente: r.coeficiente,
+          humedad_critica: r.humedad_critica, dias: r.dias, humedad_final: r.humedad_final,
+          tiempo_hasta_critica: r.tiempo_hasta_critica, vida_media: c.vida_media,
+        };
+      }
+
+      async function pedirInterpretacion(modelo, datos) {
+        const resp = await fetch("/api/modelo-interpretacion", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ modelo, datos, planta_id: plantaElegida() }),
+        });
+        let cuerpo = {};
+        try { cuerpo = await resp.json(); } catch (_) {}
+        if (resp.status === 401) {
+          throw new Error("Inicia sesión en Plant Tech para recibir una interpretación con IA.");
+        }
+        if (!resp.ok) throw new Error(cuerpo.error || "No se pudo generar la interpretación.");
+        return cuerpo;
+      }
+
+      const ticketsIA = { crecimiento: 0, humedad: 0 };
+
+      function agregarInterpretacion(salida, modelo, r) {
+        const mio = ++ticketsIA[modelo];
+        const caja = document.createElement("div");
+        caja.className = "interp";
+        const base = document.createElement("p");
+        base.className = "interp-calculada";
+        base.textContent = modelo === "crecimiento" ? lecturaCrecimiento(r) : lecturaHumedad(r);
+
+        const ia = document.createElement("div");
+        ia.className = "interp-ia";
+        ia.setAttribute("aria-live", "polite");
+        const etiqueta = document.createElement("span");
+        etiqueta.className = "etq-ia";
+        etiqueta.textContent = "Interpretación con IA";
+        const estado = document.createElement("p");
+        estado.className = "interp-estado";
+        estado.textContent = "Generando interpretación…";
+        ia.append(etiqueta, estado);
+        caja.append(base, ia);
+        salida.append(caja);
+
+        pedirInterpretacion(modelo, datosParaIA(modelo, r)).then((res) => {
+          if (mio !== ticketsIA[modelo]) return;
+          ia.replaceChildren(etiqueta);
+          [[null, res.interpretacion],
+           ["¿Tiene sentido para la especie?", res.realismo],
+           ["Recomendación:", res.recomendacion]].forEach(([titulo, texto]) => {
+            if (!texto) return;
+            const p = document.createElement("p");
+            if (titulo) {
+              const negrita = document.createElement("strong");
+              negrita.textContent = titulo + " ";
+              p.append(negrita);
+            }
+            p.append(document.createTextNode(texto));
+            ia.append(p);
+          });
+          const nota = document.createElement("small");
+          nota.textContent = "Generado por IA a partir de tus resultados; es orientativo y puede contener errores.";
+          ia.append(nota);
+        }).catch((err) => {
+          if (mio !== ticketsIA[modelo]) return;
+          estado.textContent = err.message + " Se muestra solo la lectura calculada.";
+        });
+      }
+
+      function avisoGuardado(r) {
+        if (!r.guardado_en) return null;
+        return crearNota("✔ Cálculo guardado en «" + r.guardado_en + "». Puedes verlo en Mis plantas.");
+      }
+
+      async function cargarPlantasUsuario() {
+        try {
+          const resp = await fetch("/api/plants", { credentials: "same-origin" });
+          if (!resp.ok) throw new Error("sin sesión");
+          const datos = await resp.json();
+          const select = document.getElementById("plantaSelect");
+          (datos.plantas || []).forEach((planta) => {
+            const opcion = document.createElement("option");
+            opcion.value = planta.id;
+            opcion.textContent = planta.nombre + " (" + planta.especie + ")";
+            select.appendChild(opcion);
+          });
+          document.getElementById("plantaPicker").hidden = false;
+          const pedida = new URLSearchParams(location.search).get("planta");
+          if (pedida) select.value = pedida;
+        } catch (_) {
+          document.getElementById("sinSesion").hidden = false;
+        }
+      }
+      cargarPlantasUsuario();
+
+      function dibujarGrafica(id, puntos, etiqueta, color, lineas = []) {
+        const canvas = document.getElementById(id);
+        const ctx = canvas.getContext("2d");
+        const ancho = canvas.clientWidth || 400;
+        const alto = 260;
+        const escala = window.devicePixelRatio || 1;
+
+        canvas.width = ancho * escala;
+        canvas.height = alto * escala;
+        ctx.setTransform(escala, 0, 0, escala, 0, 0);
+        ctx.clearRect(0, 0, ancho, alto);
+
+        const margen = { l: 44, r: 14, t: 22, b: 44 };
+        const w = ancho - margen.l - margen.r;
+        const h = alto - margen.t - margen.b;
+        const maxX = Math.max(...puntos.map((p) => p.t), 1);
+        const maxY = Math.max(...puntos.map((p) => p.h), ...lineas.map((l) => l.y), 1);
+        const yDe = (v) => margen.t + h - (v / maxY) * h;
+
+        ctx.font = "12px Arial";
+        ctx.fillStyle = "#405448";
+        ctx.strokeStyle = "#dce7dc";
+        ctx.lineWidth = 1;
+        ctx.setLineDash([]);
+
+        for (let i = 0; i <= 4; i++) {
+          const y = margen.t + (h * i) / 4;
+          ctx.beginPath();
+          ctx.moveTo(margen.l, y);
+          ctx.lineTo(ancho - margen.r, y);
+          ctx.stroke();
+          ctx.textAlign = "right";
+          ctx.fillText(nf((maxY * (4 - i)) / 4, 0), margen.l - 6, y + 4);
+        }
+
+        ctx.textAlign = "center";
+        for (let i = 0; i <= 4; i++) {
+          const x = margen.l + (w * i) / 4;
+          ctx.fillText(nf((maxX * i) / 4, maxX < 10 ? 1 : 0), x, margen.t + h + 16);
+        }
+        ctx.fillText("Tiempo (días)", margen.l + w / 2, alto - 6);
+        ctx.textAlign = "left";
+        ctx.fillText(etiqueta, margen.l, 12);
+
+        lineas.forEach((l) => {
+          ctx.strokeStyle = l.color;
+          ctx.fillStyle = l.color;
+          ctx.lineWidth = 1.5;
+          ctx.setLineDash([6, 4]);
+          ctx.beginPath();
+          ctx.moveTo(margen.l, yDe(l.y));
+          ctx.lineTo(ancho - margen.r, yDe(l.y));
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.textAlign = "right";
+          ctx.fillText(l.texto, ancho - margen.r, yDe(l.y) - 5);
+        });
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        puntos.forEach((p, i) => {
+          const x = margen.l + (p.t / maxX) * w;
+          const y = yDe(p.h);
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+      }
+
+      document.getElementById("growthForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const salida = document.getElementById("growthResult");
+        salida.textContent = "Calculando…";
+
+        try {
+          const r = await enviarModelo("/api/modelo-crecimiento", {
+            altura_inicial: Number(document.getElementById("growthH0").value),
+            tasa_crecimiento: Number(document.getElementById("growthR").value),
+            altura_maxima: Number(document.getElementById("growthK").value),
+            altura_objetivo: Number(document.getElementById("growthTarget").value),
+            dias: Number(document.getElementById("growthDays").value),
+            planta_id: plantaElegida(),
+          });
+
+          salida.replaceChildren();
+          const fila = document.createElement("div");
+          fila.className = "kpis";
+          fila.append(crearTile(nf(r.altura_estimada) + " cm", "Altura estimada a los " + nf(r.dias, 1) + " días"));
+          if (r.estado) {
+            const lograda = r.estado.startsWith("Altura objetivo alcanzada");
+            fila.append(crearTile(lograda ? "Alcanzada" : "Aún no", "Altura objetivo de " + nf(r.altura_objetivo) + " cm", lograda ? "ok" : ""));
+          }
+          if (r.altura_objetivo !== null) {
+            const texto = r.tiempo_hasta_objetivo === null ? "No se alcanza"
+              : r.tiempo_hasta_objetivo === 0 ? "Ya la tiene"
+              : nf(r.tiempo_hasta_objetivo) + " días";
+            fila.append(crearTile(texto, "Tiempo hasta la altura objetivo"));
+          }
+          salida.append(fila);
+          if (r.altura_objetivo === null) {
+            salida.append(crearNota("No se calcula un tiempo hasta la altura objetivo porque no se indicó una."));
+          } else if (r.tiempo_hasta_objetivo === null && r.nota_objetivo) {
+            salida.append(crearNota(r.nota_objetivo));
+          }
+          agregarInterpretacion(salida, "crecimiento", r);
+          const aviso = avisoGuardado(r);
+          if (aviso) salida.append(aviso);
+
+          const lineas = [{ y: r.altura_maxima, texto: "Altura máxima K", color: "#7c897f" }];
+          if (r.altura_objetivo !== null) {
+            lineas.push({ y: r.altura_objetivo, texto: "Objetivo", color: "#b8761a" });
+          }
+          dibujarGrafica("growthChart", r.puntos, "Altura (cm)", "#237849", lineas);
+        } catch (err) {
+          salida.textContent = err.message;
+        }
+      });
+
+      document.getElementById("humidityForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const salida = document.getElementById("humidityResult");
+        salida.textContent = "Calculando…";
+
+        try {
+          const r = await enviarModelo("/api/modelo-humedad", {
+            humedad_inicial: Number(document.getElementById("humidityH0").value),
+            coeficiente: Number(document.getElementById("humidityK").value),
+            humedad_critica: Number(document.getElementById("humidityCritical").value),
+            dias: Number(document.getElementById("humidityDays").value),
+            planta_id: plantaElegida(),
+          });
+
+          salida.replaceChildren();
+          const critica = r.humedad_final <= r.humedad_critica;
+          const fila = document.createElement("div");
+          fila.className = "kpis";
+          fila.append(crearTile(nf(r.humedad_final) + " %", "Humedad estimada a los " + nf(r.dias, 1) + " días"));
+          fila.append(crearTile(critica ? "Regar ya" : "Sin riesgo", "Nivel crítico de " + nf(r.humedad_critica) + " %", critica ? "alerta" : "ok"));
+          fila.append(crearTile(
+            r.tiempo_hasta_critica === null ? "—" : nf(r.tiempo_hasta_critica) + " días",
+            "Tiempo hasta el nivel crítico"
+          ));
+          salida.append(fila);
+          if (r.tiempo_hasta_critica === null) {
+            salida.append(crearNota("No se calcula un tiempo hasta el nivel crítico con estos valores."));
+          }
+          agregarInterpretacion(salida, "humedad", r);
+          const aviso = avisoGuardado(r);
+          if (aviso) salida.append(aviso);
+
+          dibujarGrafica("humidityChart", r.puntos, "Humedad (%)", "#bd8a32",
+            [{ y: r.humedad_critica, texto: "Nivel crítico", color: "#a12b2b" }]);
+        } catch (err) {
+          salida.textContent = err.message;
+        }
+      });
+    </script>
+  </body>
+</html>

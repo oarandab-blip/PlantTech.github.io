@@ -1,0 +1,11 @@
+clave_gemini.txt
+.secret_key
+planttech.db
+uploads/
+reset.py
+cambiar_password.py
+probar_gemini.py
+probar_claude.py
+.env
+__pycache__/
+*.pem

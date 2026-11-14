@@ -9,3 +9,6 @@ probar_claude.py
 .env
 __pycache__/
 *.pem
+
+.vscode/
+LEEME_IA.txt
